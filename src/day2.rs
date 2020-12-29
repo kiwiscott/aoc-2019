@@ -1,4 +1,5 @@
 use crate::machine::Machine;
+
 use aoc_runner_derive::{aoc, aoc_generator};
 use itertools::Itertools;
 
