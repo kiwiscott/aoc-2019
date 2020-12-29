@@ -26,7 +26,7 @@ impl Operation for Mul {
     }
 
     fn params(&self) -> &[ParamType] {
-       &self.params
+        &self.params
     }
 
     fn name(&self) -> &'static str {

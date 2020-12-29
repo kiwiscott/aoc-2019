@@ -2,23 +2,22 @@
 use crate::machine::Operation;
 
 mod add;
-mod mul;
+mod equals;
 mod input;
-mod output;
-mod terminate;
 mod jump_if_false;
 mod jump_if_true;
-mod equals;
-mod less_than; 
-
+mod less_than;
+mod mul;
+mod output;
+mod terminate;
 
 pub use add::Add;
-pub use mul::Mul;
-pub use output::Output;
+pub use equals::Equals;
 pub use input::Input;
 pub use jump_if_false::JumpIfFalse;
 pub use jump_if_true::JumpIfTrue;
-pub use equals::Equals;
-pub use less_than::LessThan; 
+pub use less_than::LessThan;
+pub use mul::Mul;
+pub use output::Output;
 
 pub use terminate::Terminate;

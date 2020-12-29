@@ -4,40 +4,28 @@ use aoc_runner_derive::{aoc, aoc_generator};
 #[aoc_generator(day5)]
 fn parse_input(input: &str) -> Vec<i32> {
     input
-        .split(',')
+        .split(|c| c == ',' || c == '\r')
+        .filter(|c| c != &"")
         .map(|line| line.parse::<i32>().unwrap())
         .collect()
 }
 #[aoc(day5, part1)]
 fn part1(instructions: &[i32]) -> i32 {
-    fn next() -> &'static str {
-        "1"
-    }
-    fn write(s: &str) {
-        println!("Diagnostic Code: {}", s);
-    }
-
-    let mut m = Machine::new(&instructions);
-    m.input = Box::new(next);
-    m.output = Box::new(write);
-    m.process();
-    0
+    run(instructions, &[1])
 }
 
 #[aoc(day5, part2)]
 fn part2(instructions: &[i32]) -> i32 {
-    fn next() -> &'static str {
-        "5"
-    }
-    fn write(s: &str) {
-        println!("Diagnostic Code: {}", s);
-    }
+    run(instructions, &[5])
+}
 
-    let mut m = Machine::new(&instructions);
-    m.input = Box::new(next);
-    m.output = Box::new(write);
+fn run(instructions: &[i32], inputs: &[i32]) -> i32 {
+    let mut m = Machine::new(instructions.to_vec(), inputs.to_vec());
     m.process();
-    0
+    for o in m.outputs() {
+        println!("Diagnostic Code: {:?}", o);
+    }
+    *m.outputs().last().unwrap_or(&0)
 }
 
 #[cfg(test)]
@@ -46,17 +34,11 @@ mod tests {
     #[test]
     fn test_part1() {
         let data = parse_input(&SAMPLE_DATA);
-
-        fn next() -> &'static str {
-            "1"
-        }
-        let mut m = Machine::new(&data);
-        m.input = Box::new(next);
-        m.process();
-        assert_eq!(99, m.value_at(4));
+        let x = run(&data, &[8]);
+        assert_eq!(1, x);
     }
 
     lazy_static! {
-        static ref SAMPLE_DATA: String = String::from("1002,4,3,4,33");
+        static ref SAMPLE_DATA: String = String::from("3,9,8,9,10,9,4,9,99,-1,8");
     }
 }

@@ -5,7 +5,7 @@ pub use machine::Machine;
 use operation::*;
 
 #[cfg(test)]
-#[path = "./machine_test.rs"]
+#[path = "machine_test.rs"]
 mod machine_test;
 
 pub(super) trait Operation {
@@ -27,10 +27,17 @@ pub(super) enum ParameterMode {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
+pub enum MachineState {
+    Halted,
+    New,
+    Processing,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub(super) enum OpResult {
     Terminate,
     Error(String),
-    Output(String),
+    Output(i32),
     Store(usize, i32),
     NoOp,
     Jump(usize),

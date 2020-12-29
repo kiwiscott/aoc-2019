@@ -18,7 +18,7 @@ impl Operation for Output {
         if x == None {
             return OpResult::Error("Expected 1 item in registry".to_string());
         }
-        OpResult::Output(x.unwrap().to_string())
+        OpResult::Output(*x.unwrap())
     }
 
     fn params(&self) -> &[ParamType] {
@@ -40,6 +40,6 @@ mod tests {
 
         let mut stack = vec![];
         stack.push(2);
-        assert_eq!(OpResult::Output("2".to_string()), o.execute(&mut stack));
+        assert_eq!(OpResult::Output(2), o.execute(&mut stack));
     }
 }

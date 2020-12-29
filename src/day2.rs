@@ -16,7 +16,7 @@ fn part1(instructions: &[i32]) -> i32 {
     let mut v = instructions.to_vec();
     v[1] = 12;
     v[2] = 2;
-    let mut m = Machine::new(&v);
+    let mut m = Machine::new(v, vec![]);
     m.process();
     m.value_at(0)
 }
@@ -27,7 +27,7 @@ fn part2(instructions: &[i32]) -> i32 {
         let mut v = instructions.to_vec();
         v[1] = i;
         v[2] = j;
-        let mut m = Machine::new(&v);
+        let mut m = Machine::new(v, vec![]);
         m.process();
 
         match 19690720 == m.value_at(0) {
@@ -50,7 +50,7 @@ mod tests {
     fn test_part1() {
         let data = parse_input(&SAMPLE_DATA);
 
-        let mut m = Machine::new(&data);
+        let mut m = Machine::new(data, vec![]);
         m.process();
         assert_eq!(3500, m.value_at(0));
     }
