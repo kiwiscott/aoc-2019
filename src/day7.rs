@@ -4,16 +4,16 @@ use itertools::Itertools;
 use std::collections::HashMap;
 
 #[aoc_generator(day7)]
-fn parse_input(input: &str) -> Vec<i32> {
+fn parse_input(input: &str) -> Vec<i64> {
     input
         .split(|c| c == ',' || c == '\r')
         .filter(|c| c != &"")
-        .map(|line| line.parse::<i32>().unwrap())
+        .map(|line| line.parse::<i64>().unwrap())
         .collect()
 }
 
 #[aoc(day7, part1)]
-fn part1(instructions: &[i32]) -> i32 {
+fn part1(instructions: &[i64]) -> i64 {
     let it: Vec<Vec<_>> = (0..5).permutations(5).collect();
     let mut mr = MachineRunner::new(instructions);
 
@@ -21,7 +21,7 @@ fn part1(instructions: &[i32]) -> i32 {
 }
 
 #[aoc(day7, part2)]
-fn part2(instructions: &[i32]) -> i32 {
+fn part2(instructions: &[i64]) -> i64 {
     let it: Vec<Vec<_>> = (5..10).permutations(5).collect();
     let mut mr = MachineRunner::new(instructions);
 
@@ -32,21 +32,21 @@ fn part2(instructions: &[i32]) -> i32 {
 }
 
 struct MachineRunner {
-    instructions: Vec<i32>,
-    memo: HashMap<String, i32>,
+    instructions: Vec<i64>,
+    memo: HashMap<String, i64>,
 }
 impl MachineRunner {
-    fn new(instructions: &[i32]) -> Self {
+    fn new(instructions: &[i64]) -> Self {
         MachineRunner {
             instructions: instructions.to_vec(),
-            memo: HashMap::<String, i32>::new(),
+            memo: HashMap::<String, i64>::new(),
         }
     }
 
-    fn run(&mut self, phase_setting: Vec<i32>) -> i32 {
-        let mut previous_output = 0;
+    fn run(&mut self, phase_setting: Vec<i64>) -> i64 {
+        let mut previous_output: i64 = 0;
         for amplifier in 0..5 {
-            let inputs = vec![phase_setting[amplifier], previous_output];
+            let inputs = vec![phase_setting[amplifier] as i64, previous_output];
 
             let key = format!("{:?}_{:?}", phase_setting[amplifier], previous_output);
 
@@ -71,7 +71,7 @@ impl MachineRunner {
         }
         previous_output
     }
-    fn run_in_series(&mut self, phase_setting: Vec<i32>) -> i32 {
+    fn run_in_series(&mut self, phase_setting: Vec<i64>) -> i64 {
         let mut ma = Machine::new(self.instructions.clone(), vec![phase_setting[0], 0]);
         let mut mb = Machine::new(self.instructions.clone(), vec![phase_setting[1]]);
         let mut mc = Machine::new(self.instructions.clone(), vec![phase_setting[2]]);

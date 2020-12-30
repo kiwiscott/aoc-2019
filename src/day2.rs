@@ -4,15 +4,15 @@ use aoc_runner_derive::{aoc, aoc_generator};
 use itertools::Itertools;
 
 #[aoc_generator(day2)]
-fn parse_input(input: &str) -> Vec<i32> {
+fn parse_input(input: &str) -> Vec<i64> {
     input
         .split(',')
-        .map(|line| line.parse::<i32>().unwrap())
+        .map(|line| line.parse::<i64>().unwrap())
         .collect()
 }
 
 #[aoc(day2, part1)]
-fn part1(instructions: &[i32]) -> i32 {
+fn part1(instructions: &[i64]) -> i64 {
     let mut v = instructions.to_vec();
     v[1] = 12;
     v[2] = 2;
@@ -22,7 +22,7 @@ fn part1(instructions: &[i32]) -> i32 {
 }
 #[aoc(day2, part2)]
 
-fn part2(instructions: &[i32]) -> i32 {
+fn part2(instructions: &[i64]) -> i64 {
     let result = (0..100).cartesian_product(0..100).find_map(|(i, j)| {
         let mut v = instructions.to_vec();
         v[1] = i;

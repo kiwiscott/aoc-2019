@@ -13,7 +13,7 @@ impl Output {
 }
 
 impl Operation for Output {
-    fn execute(&self, registry: &mut Vec<i32>) -> OpResult {
+    fn execute(&self, registry: &mut Vec<i64>) -> OpResult {
         let x = registry.get(0);
         if x == None {
             return OpResult::Error("Expected 1 item in registry".to_string());

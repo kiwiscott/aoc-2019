@@ -9,7 +9,7 @@ use operation::*;
 mod machine_test;
 
 pub(super) trait Operation {
-    fn execute(&self, registry: &mut Vec<i32>) -> OpResult;
+    fn execute(&self, registry: &mut Vec<i64>) -> OpResult;
     fn params(&self) -> &[ParamType];
     fn name(&self) -> &'static str;
 }
@@ -24,6 +24,7 @@ pub(super) enum ParamType {
 pub(super) enum ParameterMode {
     Immediate,
     Position,
+    Relative,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -37,42 +38,29 @@ pub enum MachineState {
 pub(super) enum OpResult {
     Terminate,
     Error(String),
-    Output(i32),
-    Store(usize, i32),
+    Output(i64),
+    Store(usize, i64),
     NoOp,
+    RelativeBase(i64),
     Jump(usize),
 }
 
-fn op_for_code(opcode: i32) -> Box<dyn Operation> {
+fn op_for_code(opcode: i64) -> Box<dyn Operation> {
     match opcode {
         1 => Box::new(Add::new()),
         2 => Box::new(Mul::new()),
         3 => Box::new(Input::new()),
         4 => Box::new(Output::new()),
-
         5 => Box::new(JumpIfTrue::new()),
         6 => Box::new(JumpIfFalse::new()),
         7 => Box::new(LessThan::new()),
         8 => Box::new(Equals::new()),
-
-        /*
-        Opcode 5 is jump-if-true: if the first parameter is non-zero, it sets the instruction
-        pointer to the value from the second parameter. Otherwise, it does nothing.
-
-        Opcode 6 is jump-if-false: if the first parameter is zero, it sets the
-        instruction pointer to the value from the second parameter. Otherwise, it does nothing.
-
-        Opcode 7 is less than: if the first parameter is less than the second parameter,
-        it stores 1 in the position given by the third parameter. Otherwise, it stores 0.
-
-        Opcode 8 is equals: if the first parameter is equal to the second parameter,
-        it stores 1 in the position given by the third parameter. Otherwise, it stores 0.
-        */
+        9 => Box::new(RelativeBase::new()),
         99 => Box::new(Terminate::new()),
         _ => panic!("Unknown Op Code: {:?}", opcode),
     }
 }
-fn code_and_parameter_modes(code: i32) -> (i32, Vec<ParameterMode>) {
+fn code_and_parameter_modes(code: i64) -> (i64, Vec<ParameterMode>) {
     let mut code_string = code.to_string();
     let mut op_string = String::new();
 
@@ -85,6 +73,7 @@ fn code_and_parameter_modes(code: i32) -> (i32, Vec<ParameterMode>) {
 
     loop {
         match code_string.pop() {
+            Some('2') => pmodes.insert(0, ParameterMode::Relative),
             Some('1') => pmodes.insert(0, ParameterMode::Immediate),
             Some('0') => pmodes.insert(0, ParameterMode::Position),
             _ => break,

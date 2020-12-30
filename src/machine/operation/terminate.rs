@@ -11,7 +11,7 @@ impl Terminate {
 }
 
 impl Operation for Terminate {
-    fn execute(&self, _registry: &mut Vec<i32>) -> OpResult {
+    fn execute(&self, _registry: &mut Vec<i64>) -> OpResult {
         OpResult::Terminate
     }
 

@@ -13,7 +13,7 @@ impl Add {
 }
 
 impl Operation for Add {
-    fn execute(&self, registry: &mut Vec<i32>) -> OpResult {
+    fn execute(&self, registry: &mut Vec<i64>) -> OpResult {
         let x = registry.get(0);
         let y = registry.get(1);
         let out_param = registry.get(2);

@@ -1,36 +1,43 @@
 use super::*;
 
 pub struct Machine {
-    pub instructions: Vec<i32>,
+    pub instructions: Vec<i64>,
     instruction_pointer: usize,
-    registry: Vec<i32>,
-    input: Vec<i32>,
-    output: Vec<i32>,
+    relative_base: i64,
+    registry: Vec<i64>,
+    input: Vec<i64>,
+    output: Vec<i64>,
     pub state: MachineState,
 }
 
 impl Machine {
-    pub fn new(instructions: Vec<i32>, input: Vec<i32>) -> Self {
+    pub fn new(instructions: Vec<i64>, input: Vec<i64>) -> Self {
+        let mut buf = vec![0; 5000];
+        for (i, instr) in instructions.iter().enumerate() {
+            buf[i] = *instr;
+        }
+
         Machine {
-            instructions: instructions,
+            instructions: buf,
             instruction_pointer: 0,
+            relative_base: 0,
             registry: vec![],
             input: input,
             output: vec![],
             state: MachineState::New,
         }
     }
-    pub fn value_at(&self, at: usize) -> i32 {
+    pub fn value_at(&self, at: usize) -> i64 {
         self.instructions[at]
     }
-    pub fn outputs(&self) -> Vec<i32> {
+    pub fn outputs(&self) -> Vec<i64> {
         self.output.to_vec()
     }
-    pub fn insert_input(&mut self, input: i32) {
+    pub fn insert_input(&mut self, input: i64) {
         self.input.push(input);
     }
 
-    fn consume_pointer(&mut self) -> i32 {
+    fn consume_pointer(&mut self) -> i64 {
         let x = self.instructions[self.instruction_pointer];
         self.instruction_pointer += 1;
         x
@@ -59,11 +66,22 @@ impl Machine {
                 }
                 ParamType::Output => {
                     let value = self.consume_pointer();
-                    self.registry.push(value);
+                    //Day 9 - Relative Params for Output
+                    match pmodes.pop() {
+                        Some(ParameterMode::Relative) => {
+                            let index = self.relative_base + value;
+                            self.registry.push(index);
+                        }
+                        _ => self.registry.push(value),
+                    }
                 }
                 ParamType::Value => {
                     let value = self.consume_pointer();
                     match pmodes.pop() {
+                        Some(ParameterMode::Relative) => {
+                            let index = self.relative_base + value;
+                            self.registry.push(self.instructions[index as usize]);
+                        }
                         Some(ParameterMode::Immediate) => self.registry.push(value),
                         _ => self.registry.push(self.instructions[value as usize]),
                     }
@@ -78,6 +96,7 @@ impl Machine {
             OpResult::Output(s) => self.output.push(s),
             OpResult::NoOp => (),
             OpResult::Jump(jump_to) => self.instruction_pointer = jump_to,
+            OpResult::RelativeBase(adjust_by) => self.relative_base += adjust_by,
         }
         self.registry.clear();
     }

@@ -13,7 +13,7 @@ impl Input {
 }
 
 impl Operation for Input {
-    fn execute(&self, registry: &mut Vec<i32>) -> OpResult {
+    fn execute(&self, registry: &mut Vec<i64>) -> OpResult {
         let x = registry.get(0);
         let out_param = registry.get(1);
 
