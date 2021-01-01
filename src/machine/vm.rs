@@ -1,40 +1,50 @@
 use super::*;
+use std::sync::mpsc::{channel, Receiver, Sender};
 
-pub struct Machine {
-    pub instructions: Vec<i64>,
+pub struct VM {
+    instructions: Vec<i64>,
     instruction_pointer: usize,
     relative_base: i64,
     registry: Vec<i64>,
-    input: Vec<i64>,
-    output: Vec<i64>,
-    pub state: MachineState,
+    input: Receiver<i64>,
+    output: Sender<i64>,
+    last_output: Option<i64>,
+    state: MachineState,
 }
 
-impl Machine {
-    pub fn new(instructions: Vec<i64>, input: Vec<i64>) -> Self {
+impl VM {
+    pub fn new(instructions: &[i64], input: Receiver<i64>, output: Sender<i64>) -> Self {
         let mut buf = vec![0; 5000];
         for (i, instr) in instructions.iter().enumerate() {
             buf[i] = *instr;
         }
 
-        Machine {
+        VM {
             instructions: buf,
             instruction_pointer: 0,
             relative_base: 0,
             registry: vec![],
             input: input,
-            output: vec![],
+            output: output,
+            last_output: None,
             state: MachineState::New,
         }
     }
-    pub fn value_at(&self, at: usize) -> i64 {
-        self.instructions[at]
+    pub fn basic(instructions: &[i64]) -> (Self, Sender<i64>, Receiver<i64>) {
+        let (send_to, vm_input) = channel::<i64>();
+        let (vm_output, rec_from) = channel::<i64>();
+        let m = Self::new(instructions, vm_input, vm_output);
+        (m, send_to, rec_from)
     }
-    pub fn outputs(&self) -> Vec<i64> {
-        self.output.to_vec()
+    pub fn state(&self) -> MachineState {
+        self.state
     }
-    pub fn insert_input(&mut self, input: i64) {
-        self.input.push(input);
+    pub fn last_output(&self) -> Option<i64> {
+        self.last_output
+    }
+
+    pub fn instruction_at(&self, at: usize) -> Option<&i64> {
+        self.instructions.get(at)
     }
 
     fn consume_pointer(&mut self) -> i64 {
@@ -44,11 +54,11 @@ impl Machine {
     }
     pub fn process(&mut self) {
         while self.state != MachineState::Halted {
-            self.next();
+            self.tick();
         }
     }
 
-    pub fn next(&mut self) {
+    pub fn tick(&mut self) {
         if self.state != MachineState::Processing {
             self.state = MachineState::Processing;
         }
@@ -61,7 +71,7 @@ impl Machine {
         for param in op.params() {
             match param {
                 ParamType::Input => {
-                    let value = self.input.remove(0);
+                    let value = self.input.recv().unwrap();
                     self.registry.push(value);
                 }
                 ParamType::Output => {
@@ -93,7 +103,10 @@ impl Machine {
             OpResult::Terminate => self.state = MachineState::Halted,
             OpResult::Error(s) => panic!(s),
             OpResult::Store(at, value) => self.instructions[at as usize] = value,
-            OpResult::Output(s) => self.output.push(s),
+            OpResult::Output(s) => {
+                self.last_output = Some(s);
+                self.output.send(s).unwrap();
+            }
             OpResult::NoOp => (),
             OpResult::Jump(jump_to) => self.instruction_pointer = jump_to,
             OpResult::RelativeBase(adjust_by) => self.relative_base += adjust_by,

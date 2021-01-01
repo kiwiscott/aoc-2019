@@ -1,12 +1,13 @@
-mod machine;
 mod operation;
+mod vm;
 
-pub use machine::Machine;
+pub use vm::VM;
+
 use operation::*;
 
 #[cfg(test)]
-#[path = "machine_test.rs"]
-mod machine_test;
+#[path = "vm_test.rs"]
+mod vm_test;
 
 pub(super) trait Operation {
     fn execute(&self, registry: &mut Vec<i64>) -> OpResult;
@@ -27,11 +28,12 @@ pub(super) enum ParameterMode {
     Relative,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum MachineState {
     Halted,
     New,
     Processing,
+    //AwaitingInput,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]

@@ -3,7 +3,7 @@ use std::collections::HashSet;
 
 #[aoc_generator(day4)]
 fn parse_input(input: &str) -> (u32, u32) {
-    let mut result = input.splitn(2, '-');
+    let mut result = input.lines().next().unwrap().splitn(2, '-');
     let min = result.next().unwrap().parse::<u32>().unwrap();
     let max = result.next().unwrap().parse::<u32>().unwrap();
     (min, max)

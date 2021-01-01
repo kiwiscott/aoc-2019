@@ -1,7 +1,7 @@
-use crate::machine::{Machine, MachineState};
+use crate::machine::{MachineState, VM};
 use aoc_runner_derive::{aoc, aoc_generator};
 use itertools::Itertools;
-use std::collections::HashMap;
+use std::sync::mpsc::{Receiver, Sender};
 
 #[aoc_generator(day7)]
 fn parse_input(input: &str) -> Vec<i64> {
@@ -14,6 +14,7 @@ fn parse_input(input: &str) -> Vec<i64> {
 
 #[aoc(day7, part1)]
 fn part1(instructions: &[i64]) -> i64 {
+    //298586
     let it: Vec<Vec<_>> = (0..5).permutations(5).collect();
     let mut mr = MachineRunner::new(instructions);
 
@@ -22,6 +23,8 @@ fn part1(instructions: &[i64]) -> i64 {
 
 #[aoc(day7, part2)]
 fn part2(instructions: &[i64]) -> i64 {
+    //9246095
+
     let it: Vec<Vec<_>> = (5..10).permutations(5).collect();
     let mut mr = MachineRunner::new(instructions);
 
@@ -33,77 +36,69 @@ fn part2(instructions: &[i64]) -> i64 {
 
 struct MachineRunner {
     instructions: Vec<i64>,
-    memo: HashMap<String, i64>,
 }
 impl MachineRunner {
     fn new(instructions: &[i64]) -> Self {
         MachineRunner {
             instructions: instructions.to_vec(),
-            memo: HashMap::<String, i64>::new(),
         }
     }
 
     fn run(&mut self, phase_setting: Vec<i64>) -> i64 {
         let mut previous_output: i64 = 0;
         for amplifier in 0..5 {
-            let inputs = vec![phase_setting[amplifier] as i64, previous_output];
-
-            let key = format!("{:?}_{:?}", phase_setting[amplifier], previous_output);
-
-            match self.memo.get(&key) {
-                Some(n) => previous_output = *n,
-                None => {
-                    let mut m = Machine::new(self.instructions.clone(), inputs);
-                    let mut m_output_ln = m.outputs().len();
-                    while m.state != MachineState::Halted {
-                        m.next();
-                        //We ave to get the putput and put it into the input
-                        let outs = m.outputs();
-                        for i in m_output_ln..outs.len() {
-                            m.insert_input(outs[i]);
-                        }
-                        m_output_ln = outs.len();
-                    }
-                    previous_output = *m.outputs().last().expect("No output from the machine");
-                    self.memo.insert(key, previous_output);
-                }
-            }
+            let (mut vm, input, output) = VM::basic(&self.instructions);
+            input
+                .send(phase_setting[amplifier])
+                .expect("Couldn't send inputs");
+            input.send(previous_output).expect("Couldn't send inputs");
+            //Run the machine
+            vm.process();
+            //Get the Results
+            previous_output = output
+                .try_recv()
+                .expect("Amplifier did not retuan a result ");
         }
         previous_output
     }
     fn run_in_series(&mut self, phase_setting: Vec<i64>) -> i64 {
-        let mut ma = Machine::new(self.instructions.clone(), vec![phase_setting[0], 0]);
-        let mut mb = Machine::new(self.instructions.clone(), vec![phase_setting[1]]);
-        let mut mc = Machine::new(self.instructions.clone(), vec![phase_setting[2]]);
-        let mut md = Machine::new(self.instructions.clone(), vec![phase_setting[3]]);
-        let mut me = Machine::new(self.instructions.clone(), vec![phase_setting[4]]);
+        let (mut amp1, amp1_input, amp1_ouput) = VM::basic(&self.instructions);
 
-        let mut ma_out_len = 0;
-        let mut mb_out_len = 0;
-        let mut mc_out_len = 0;
-        let mut md_out_len = 0;
-        let mut me_out_len = 0;
+        amp1_input.send(phase_setting[0]).expect("Ok");
+        amp1_input.send(0).expect("Ok");
 
-        fn run_till_output(m1: &mut Machine, m2: &mut Machine, m1_len: &mut usize) {
-            while m1.state != MachineState::Halted {
-                m1.next();
-                let outs = m1.outputs();
-                if outs.len() > *m1_len {
-                    m2.insert_input(*outs.last().unwrap());
-                    *m1_len = outs.len();
+        let (mut amp2, amp2_input, amp2_ouput) = VM::basic(&self.instructions);
+        amp2_input.send(phase_setting[1]).expect("Ok");
+
+        let (mut amp3, amp3_input, amp3_ouput) = VM::basic(&self.instructions);
+        amp3_input.send(phase_setting[2]).expect("Ok");
+
+        let (mut amp4, amp4_input, amp4_ouput) = VM::basic(&self.instructions);
+        amp4_input.send(phase_setting[3]).expect("Ok");
+
+        let (mut amp5, amp5_input, amp5_ouput) = VM::basic(&self.instructions);
+        amp5_input.send(phase_setting[4]).expect("Ok");
+
+        fn run_till_output(m1: &mut VM, m1_output: &Receiver<i64>, next_input: &Sender<i64>) {
+            while m1.state() != MachineState::Halted {
+                m1.tick();
+                if let Ok(n) = m1_output.try_recv() {
+                    next_input.send(n).expect("Sender not working");
                     return;
                 }
             }
         }
 
-        while me.state != MachineState::Halted {
-            run_till_output(&mut ma, &mut mb, &mut ma_out_len);
-            run_till_output(&mut mb, &mut mc, &mut mb_out_len);
-            run_till_output(&mut mc, &mut md, &mut mc_out_len);
-            run_till_output(&mut md, &mut me, &mut md_out_len);
-            run_till_output(&mut me, &mut ma, &mut me_out_len);
+        while amp5.state() != MachineState::Halted {
+            run_till_output(&mut amp1, &amp1_ouput, &amp2_input);
+            run_till_output(&mut amp2, &amp2_ouput, &amp3_input);
+            run_till_output(&mut amp3, &amp3_ouput, &amp4_input);
+            run_till_output(&mut amp4, &amp4_ouput, &amp5_input);
+            run_till_output(&mut amp5, &amp5_ouput, &amp1_input);
         }
-        *me.outputs().last().unwrap_or(&0)
+
+        amp5.last_output()
+            .expect("Output expected from Amplifier 5")
     }
 }
 

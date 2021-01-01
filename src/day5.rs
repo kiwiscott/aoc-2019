@@ -1,4 +1,4 @@
-use crate::machine::Machine;
+use crate::machine::VM;
 use aoc_runner_derive::{aoc, aoc_generator};
 
 #[aoc_generator(day5)]
@@ -20,12 +20,12 @@ fn part2(instructions: &[i64]) -> i64 {
 }
 
 fn run(instructions: &[i64], inputs: &[i64]) -> i64 {
-    let mut m = Machine::new(instructions.to_vec(), inputs.to_vec());
-    m.process();
-    for o in m.outputs() {
-        println!("Diagnostic Code: {:?}", o);
-    }
-    *m.outputs().last().unwrap_or(&0)
+    let (mut vm, input,_o) = VM::basic(instructions); 
+    for i in inputs{
+        input.send(*i).expect("HUH?");
+    }        
+    vm.process();
+    vm.last_output().expect("Output expected")
 }
 
 #[cfg(test)]
