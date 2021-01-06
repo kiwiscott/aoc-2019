@@ -71,6 +71,7 @@ impl VM {
         for param in op.params() {
             match param {
                 ParamType::Input => {
+                    self.state = MachineState::AwaitingInput;
                     let value = self.input.recv().unwrap();
                     self.registry.push(value);
                 }

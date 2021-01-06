@@ -1,4 +1,3 @@
 {
-    "debug.allowBreakpointsEverywhere": true,
-    "editor.fontSize": 16
+    "debug.allowBreakpointsEverywhere": true
 }

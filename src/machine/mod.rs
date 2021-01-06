@@ -33,7 +33,7 @@ pub enum MachineState {
     Halted,
     New,
     Processing,
-    //AwaitingInput,
+    AwaitingInput,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
