@@ -1,0 +1,44 @@
+use crate::machine::{MachineState, VM};
+use aoc_runner_derive::{aoc, aoc_generator};
+use std::sync::mpsc::Sender;
+
+#[aoc_generator(day17)]
+fn parse_input(input: &str) -> Vec<i64> {
+    input
+        .split(|c| c == ',' || c == '\r')
+        .filter(|c| c != &"")
+        .map(|line| line.parse::<i64>().unwrap())
+        .collect()
+}
+
+#[aoc(day17, part1)]
+fn part1(instructions: &[i64]) -> usize {
+    //let mut data = vec![];
+
+    let mut ins = instructions.to_vec();
+    ins[0] = 2;
+    let (mut vm, input, output) = VM::basic(&ins);
+
+    send_string(&input, "A,B,C,C,B,C,A,B\n");
+    send_string(&input, "R,4,R,12\n");
+    send_string(&input, "R,10\n");
+    send_string(&input, "L,12\n");
+    send_string(&input, "n\n");
+
+    //let mut collector = vec![];
+    while vm.state() != MachineState::Halted {
+        vm.tick();
+        if let Ok(n) = output.try_recv() {
+            print!("{}", n as u8 as char);
+        }
+    }
+
+    9
+}
+
+pub fn send_string(input: &Sender<i64>, s: &str) {
+    for c in s.chars() {
+        let data = c as i64;
+        input.send(data).expect("Should work");
+    }
+}
